@@ -5,8 +5,12 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 )
 
+var (
+	pollInterval = time.Second * 10
+)
 const (
 	endpoint = "https://api.open-meteo.com/v1/forecast"//?latitude=52.52&longitude=13.41&hourly=temperature_2m"    //A string variable storing API URL
 )
@@ -17,15 +21,29 @@ type Data struct {
 }
 
 func main(){
-	data, err := GetWeatherResults(52.52,13.41)
-	if err != nil{
-		log.Fatal(err)
+	ticker := time.NewTicker(pollInterval)  //Creates a ticker that sends a signal on a channel (ticker.C) at fixed intervals.
+	for {
+		<-ticker.C  //This is a blocking receive from the ticker channel.
+		data, err := GetWeatherResults(52.52,13.41)
+		if err != nil{
+			log.Fatal(err)
+		}
+		fmt.Println(data)
 	}
-	fmt.Println(data)
+	// data, err := GetWeatherResults(52.52,13.41)
+	// if err != nil{
+	// 	log.Fatal(err)
+	// }
+	// fmt.Println(data)
 }
+
 func GetWeatherResults(lat, long float64) (*Data, error) {
+	// we shorted the Uri So we did it to write formatted data into a string.
+	uri := fmt.Sprintf("%s?latitude=%.2f&longitude=%.2f&hourly=temperature_2m",endpoint,lat,long)
+
+
 	// Rather than calling http.Get lets first made request ....
-	req, err := http.NewRequest("GET",endpoint,nil)
+	req, err := http.NewRequest("GET",uri,nil)
 	if err != nil{
 		log.Fatal(err)
 	}
@@ -36,19 +54,23 @@ func GetWeatherResults(lat, long float64) (*Data, error) {
 		log.Fatal(err)
 	}
 
-	// resp, err := http.Get(endpoint)  //Sends an HTTP GET request,Return: resp → pointer to http.Response and err → error if request fails
+	// resp, err := http.Get(uri)  //Sends an HTTP GET request,Return: resp → pointer to http.Response and err → error if request fails
 	// if err != nil{
-	// 	log.Fatal(err)
+	// 	// log.Fatal(err)
+	// 	return nil,err
 	// }
 
 	// Lets Explore The Response...
 
 	// var data map[string]map[string]any
 
+	defer resp.Body.Close()
+
 	var data Data
 	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil{
-		log.Fatal(err)
+		// log.Fatal(err)
+		return nil,err
 	}
 	// fmt.Println(data["hourly"]["temperature_2m"])
-	return nil,nil
+	return &data,nil
 }
