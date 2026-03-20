@@ -21,7 +21,7 @@ type Data struct {
 }
 
 func main(){
-	ticker := time.NewTicker(pollInterval)  //Creates a ticker that sends a signal on a channel (ticker.C) at fixed intervals.
+	ticker := time.NewTicker(pollInterval)  //ticker that sends a signal on a channel (ticker.C) at fixed intervals.
 	for {
 		<-ticker.C  //This is a blocking receive from the ticker channel.
 		data, err := GetWeatherResults(52.52,13.41)
@@ -30,26 +30,19 @@ func main(){
 		}
 		fmt.Println(data)
 	}
-	// data, err := GetWeatherResults(52.52,13.41)
-	// if err != nil{
-	// 	log.Fatal(err)
-	// }
-	// fmt.Println(data)
 }
 
 func GetWeatherResults(lat, long float64) (*Data, error) {
-	// we shorted the Uri So we did it to write formatted data into a string.
+	// we shorted the Uri So we did Sprintf to write formatted data into a string.
 	uri := fmt.Sprintf("%s?latitude=%.2f&longitude=%.2f&hourly=temperature_2m",endpoint,lat,long)
 
-
-	// Rather than calling http.Get lets first made request ....
 	req, err := http.NewRequest("GET",uri,nil)
 	if err != nil{
 		log.Fatal(err)
 	}
 	// Now we can actually create a client and use that client to Perforn Request.. We did it because we want to control TimeOut and other things..
 	client := &http.Client{}
-	resp, err := client.Do(req)  //Do sends an HTTP request and returns an HTTP response, following policy (such as redirects, cookies, auth) as configured on the client.
+	resp, err := client.Do(req)  //Do() sends an HTTP request and returns an HTTP response, following policy (such as redirects, cookies, auth) as configured on the client.
 	if err != nil{
 		log.Fatal(err)
 	}
@@ -61,10 +54,9 @@ func GetWeatherResults(lat, long float64) (*Data, error) {
 	// }
 
 	// Lets Explore The Response...
-
 	// var data map[string]map[string]any
 
-	defer resp.Body.Close()
+	defer resp.Body.Close() // important to close..
 
 	var data Data
 	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil{
