@@ -15,24 +15,57 @@ const (
 	endpoint = "https://api.open-meteo.com/v1/forecast"//?latitude=52.52&longitude=13.41&hourly=temperature_2m"    //A string variable storing API URL
 )
 
-type Data struct {
+type WeatherData struct {
 	Elevation float64 `json:"elevation"`
 	Hourly map[string]any `json:"hourly"`
 }
 
-func main(){
-	ticker := time.NewTicker(pollInterval)  //ticker that sends a signal on a channel (ticker.C) at fixed intervals.
-	for {
-		<-ticker.C  //This is a blocking receive from the ticker channel.
-		data, err := GetWeatherResults(52.52,13.41)
-		if err != nil{
-			log.Fatal(err)
-		}
-		fmt.Println(data)
+type WPoller struct {
+	closech chan struct{}
+}
+func NewWPoller() *WPoller{
+	return &WPoller{
+		closech: make(chan struct{}),
 	}
 }
 
-func GetWeatherResults(lat, long float64) (*Data, error) {
+func(wp WPoller) close() {
+	// now we can return Empty string to the channel or just close it.
+	close(wp.closech)
+}
+
+func (wp WPoller) start() {
+	fmt.Println("Startiing wpoller")
+
+	ticker := time.NewTicker(pollInterval)  //ticker that sends a signal on a channel (ticker.C) at fixed intervals.
+	free:
+	for {
+		select {
+		case <-ticker.C:
+			data,err := GetWeatherResults(52.52, 13.41)
+			if err != nil {
+				log.Fatal(err)
+			}
+			if err = wp.handleData(data); err != nil {
+				log.Fatal(err)
+			}
+		case <- wp.closech:
+			break free
+		}
+	}
+}
+
+func (wp WPoller) handleData(data *WeatherData) error {
+	fmt.Println(data)
+	return nil
+}
+
+func main(){
+	wpoller := NewWPoller()
+	wpoller.start()
+}
+
+func GetWeatherResults(lat, long float64) (*WeatherData, error) {
 	// we shorted the Uri So we did Sprintf to write formatted data into a string.
 	uri := fmt.Sprintf("%s?latitude=%.2f&longitude=%.2f&hourly=temperature_2m",endpoint,lat,long)
 
@@ -58,7 +91,7 @@ func GetWeatherResults(lat, long float64) (*Data, error) {
 
 	defer resp.Body.Close() // important to close..
 
-	var data Data
+	var data WeatherData
 	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil{
 		// log.Fatal(err)
 		return nil,err
