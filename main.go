@@ -38,7 +38,7 @@ func (wp WPoller) start() {
 	fmt.Println("Startiing wpoller")
 
 	ticker := time.NewTicker(pollInterval)  //ticker that sends a signal on a channel (ticker.C) at fixed intervals.
-	free:
+	outer:
 	for {
 		select {
 		case <-ticker.C:
@@ -50,7 +50,7 @@ func (wp WPoller) start() {
 				log.Fatal(err)
 			}
 		case <- wp.closech:
-			break free
+			break outer
 		}
 	}
 }
