@@ -172,7 +172,6 @@ func main() {
 			"chaurasiavivek840@gmail.com",
 			"amansamraj@gmail.com",
 			"Luthergraham2007@gmail.com",
-			"Zenaniverseamv@gmail.com",
 			"yadavg7970@gmail.com",
 			"Shivamrathore1234sk@gmail.com",
 		},
